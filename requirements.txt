@@ -1,0 +1,12 @@
+# public
+numpy
+PyQt5
+
+# app.py
+flask
+
+# Logging module
+psutil
+py-cpuinfo
+GPUtil
+prettytable
