@@ -4,6 +4,9 @@ PyQt5
 
 # app.py
 flask
+requests
+fake_useragent
+bs4
 
 # Logging module
 psutil
