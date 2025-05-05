@@ -35,6 +35,7 @@ CONFIGS = {
     'flask_debug' : False,
     'flask_port' : 1145,
     'app_name' : 'Firefly',
+    'templates_reload' : True
 }
     
 # init log
@@ -46,6 +47,7 @@ else:
 
 # init flask app
 app = Flask(CONFIGS['app_name'])
+app.config['TEMPLATES_AUTO_RELOAD'] = CONFIGS['templates_reload']
 app.static_folder = "static"
 
 # Config Flask logging handlers
@@ -92,7 +94,11 @@ def capture_response_data(response):
 # define flask app routes
 @app.route('/')
 def index():
-    return ...
+    return render_template("home.html")
+
+@app.route('/single')
+def single():
+    return render_template("single.html")
 
 
 if __name__ == "__main__":

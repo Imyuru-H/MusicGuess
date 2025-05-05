@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>音游笑传之猜猜呗</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+</head>
+<body>
+	<div id="start">
+		<div id="single" onclick="start_single()">
+			<h2>猜歌，启动！</h2>
+		</div>
+	</div>
+	<div id="announcement"></div>
+	<script>
+		function start_single() {
+			window.location.assign('single')
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+body {
+	background-color: azure;
+}
+
+#start {
+	width: 100%;
+	display: inline-flex;
+	align-items: center;
+	text-align: center;
+	justify-content: center;
+}
+
+#single {
+	background-color: white;
+	margin-top: 20vh;
+	height: 200px;
+	width: 400px;
+	border-radius: 30px;
+	display: inline-flex;
+	position: relative;
+	align-items: center;
+	text-align: center;
+	justify-content: center;
+	transition: all 0.3s ease-out;
+	transition: background-color 0.2s;
+}
+
+#single::after {
+	content: "";
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    filter: blur(40px);
+    z-index: -1;
+    border-radius: inherit;
+    transition: all 0.3s;
+}
+
+#single:hover {
+	background-color: #eeeeee;
+}
+
+#single > h2 {
+	color: #3498db; !important
+}
