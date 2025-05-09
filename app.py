@@ -4,10 +4,11 @@
 # third party module initlization
 import __init__
 
-"""A web app for a Rhythm Game Music Guessing Game.
+"""A simple app for Rhythm Game Music guessing game.
 
-...
-
+Author:      Imyuru_ (Imyuru_H)
+Version:     0.0.1
+Update Time: 25/04/30
 """
 
 __version__ = '0.0.1'
