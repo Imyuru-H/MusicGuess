@@ -13,3 +13,7 @@ psutil
 py-cpuinfo
 GPUtil
 prettytable
+
+# crawler.py
+lxml
+html5lib

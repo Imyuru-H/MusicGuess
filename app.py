@@ -28,6 +28,7 @@ import threading
 from PyQt5.QtWidgets import QApplication
 
 import NonUiLog, UiLog
+from crawler import Crawler
 
 
 # config app settings
@@ -45,6 +46,9 @@ if CONFIGS['ui_logging']:
     logs = UiLog.LoggerApp()
 else:
     logs = NonUiLog.Info()
+    
+# init crawler
+crawler = Crawler()
 
 # init flask app
 app = Flask(CONFIGS['app_name'])
