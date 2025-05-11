@@ -2,21 +2,26 @@
 <html>
 <head>
 	<title>音游笑传之猜猜呗</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/single.css') }}">
 </head>
 <body>
 	<div id="top-bar"></div>
-	<div id="search-bar"></div>
+	<div id="search-bar">
+		<div>
+			<input type="text" placeholder="请输入想猜的曲目喵~">
+		</div>
+	</div>
 	<div id="game-info"></div>
     <div id="tip">
         <table id="tip-table"></table>
     </div>
 	<div id="table-container">
 		<table id="guess-table">
-			<tr>
+			<tr id="header">
 				<th>曲名</th>
 				<th>作者</th>
-				<tr>BPM</tr>
-				<tr>章节</tr>
+				<th>BPM</th>
+				<th>章节</th>
 			</tr>
 		</table>
 	</div>

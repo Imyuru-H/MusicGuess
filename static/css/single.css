@@ -1,0 +1,78 @@
+html {
+    text-align: center;
+    background-color: #f8fafc;
+}
+
+/* Search bar styles */
+#search-bar {
+    margin-bottom: 24px;
+}
+
+input {
+    width: 425px;
+    padding: 8px 16px;
+    font-size: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s;
+}
+
+input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #646cff1a;
+}
+
+/* Guess table styles */
+table {
+    border-collapse: collapse;
+    box-shadow: 0 4px 6px -1px #0000001a;
+}
+
+#table-container {
+    width: 80vw;
+    text-align: center;
+    border-radius: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#guess-table {
+    width: 100%;
+    height: auto;
+}
+
+#header th {
+    background-color: #e2e8f0;
+    color: #1e293b;
+}
+
+#header th,td {
+    font-size: 12px;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 9px 12px;
+}
+
+#header th:nth-child(1) {
+    border-radius: 20px 0px 0px 0px;
+}
+
+#header th:nth-last-child(1) {
+    border-radius: 0px 20px 0px 0px;
+}
+
+#guess-table tr:not(#header) {
+    min-height: 30px;
+    height: 30px;
+    background-color: white;
+}
+
+#guess-table tr:nth-last-child(1) td:nth-child(1) {
+    border-radius: 0px 0px 0px 10px;
+}
+
+#guess-table tr:nth-last-child(1) td:nth-last-child(1) {
+    border-radius: 0px 0px 10px 0px;
+}
