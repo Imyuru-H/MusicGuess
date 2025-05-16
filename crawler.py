@@ -69,24 +69,36 @@ class WikiCrawler(Crawler):
         return table
     
     def _parse_table_lst(self, table:str) -> dict:
-        tb_lst = table.split('\n')
-        # del all umpty elements in the list
-        tb_lst = list(filter(None, tb_lst))
-        if_at = True if tb_lst.index('Difficulty') + 1 - tb_lst.index('Level') == 4 else False # if have AT difficulty then True, if not then False
-        
-        info_dict = {
-            'pack' : tb_lst[tb_lst.index('Pack') + 1],
-            'difficulty' : tb_lst[tb_lst.index('Difficulty') + 1 : tb_lst.index('Level')],
-            'level' : tb_lst[tb_lst.index('Pack') + 1 : tb_lst.index('Note count')],
-            'note count' : tb_lst[tb_lst.index('Note count') + 1 : tb_lst.index('Artist')],
-            'artist' : tb_lst[tb_lst.index('Artist') + 1],
-            'illustration' : tb_lst[tb_lst.index('Illustration') + 1],
-            'duration' : tb_lst[tb_lst.index('Duration') + 1],
-            'chart design' : list(filter(None, 
+        def _get_chart_design(table:list):
+            if 'Chart design (EZ)' in table:
+                result = list(filter(None, 
                             [tb_lst[tb_lst.index('Chart design (EZ)') + 1],
                              tb_lst[tb_lst.index('Chart design (HD)') + 1],
                              tb_lst[tb_lst.index('Chart design (IN)') + 1],
                              tb_lst[tb_lst.index('Chart design (AT)') + 1] if if_at else '']))
+            else:
+                result = tb_lst[tb_lst.index('Chart design') + 1]
+            
+            return result
+
+        tb_lst = table.split('\n')
+        # del all umpty elements in the list
+        tb_lst = list(filter(None, tb_lst))
+
+        print(tb_lst)
+
+        # if have AT difficulty then True, if not then False
+        if_at = True if tb_lst.index('Difficulty') + 1 - tb_lst.index('Level') == 4 else False
+        
+        info_dict = {
+            'pack' : tb_lst[tb_lst.index('Pack') + 1],
+            'difficulty' : tb_lst[tb_lst.index('Difficulty') + 1 : tb_lst.index('Level')],
+            'level' : tb_lst[tb_lst.index('Level') + 1 : tb_lst.index('Note count')],
+            'note count' : tb_lst[tb_lst.index('Note count') + 1 : tb_lst.index('Artist')],
+            'artist' : tb_lst[tb_lst.index('Artist') + 1],
+            'illustration' : tb_lst[tb_lst.index('Illustration') + 1],
+            'duration' : tb_lst[tb_lst.index('Duration') + 1],
+            'chart design' : _get_chart_design(tb_lst),
         }
         
         return info_dict
@@ -175,6 +187,6 @@ class PhiCrawler:
 
 if __name__ == "__main__":
     crawler = PhiCrawler()
-    info = crawler.run('S.A.T.E.L.L.I.T.E.')
+    info = crawler.run('Spasmodic')
     print(info)
     
