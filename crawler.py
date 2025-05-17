@@ -1,19 +1,29 @@
 # !/.venv/Scripts python3
 # -*- coding: utf-8 -*-
 
-"""A crawler for Rhythm Game Music guessing game.
+""" A crawler for Rhythm Game Music guessing game.
 
 Author:      Imyuru_ (Imyuru_H)
-Version:     0.0.2
+Version:     0.0.3
 Update Time: 25/05/09
 """
 
-__version__ = '0.0.2'
+""" Update Logs:
+ - 0.0.1:
+     - Create this module and add the basic code.
+ - 0.0.2:
+     - Divided the public methods of all crawlers into a father class "Crawler"
+     - Add a crawler to get the BPM property of the target music.
+ - 0.0.3:
+     - Fix some bugs while crawling the property which all the charts were wrote by one person.
+"""
+
+__version__ = '0.0.3'
 __author__ = 'Imyuru_'
 
 # Copyright (c) 2025 Imyuru_. Licensed under MIT License.
 
-import os, re
+import os, re, time
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 import requests
@@ -21,6 +31,8 @@ import bs4
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from urllib.parse import urljoin
+
+from timeit import repeat
 
 
 class Config:
@@ -85,7 +97,7 @@ class WikiCrawler(Crawler):
         # del all umpty elements in the list
         tb_lst = list(filter(None, tb_lst))
 
-        print(tb_lst)
+        # print(tb_lst)
 
         # if have AT difficulty then True, if not then False
         if_at = True if tb_lst.index('Difficulty') + 1 - tb_lst.index('Level') == 4 else False
@@ -103,35 +115,32 @@ class WikiCrawler(Crawler):
         
         return info_dict
     
-    def run(self, song:str) -> dict:
+    def run(self, song:str) -> tuple[dict,float]:
+        start_time = time.time()
         song = song.replace(' ','_')
         resp = self._fetch(f"{Config.START_URL_WIKI}{song}")
         data = self._parse_html(resp)
         table = self._get_song_data(data)
         info = self._parse_table_lst(table)
+        duration = time.time() - start_time
         
-        return info
+        return info, duration
 
 class MoeCrawler(Crawler):
     def __init__(self):
         super().__init__()
     
     def _get_n_parse_song_data(self, html:BeautifulSoup) -> dict:
+        HTML_TAG_PATTERN = re.compile(r'<.*?>')
+        _VALID_FORMAT_PATTERN = re.compile(r'^(\d+)\s+\((\d+\.\d+)\)$')
+        
         def get_content(text:str) -> str:
-            cleaned_text = re.sub(r'<.*?>', '', text)
-            return cleaned_text
-
-        def lst_split(lst:list, step:int) -> list[list]:
-            func = lambda a,b : map(lambda c:a[c:c+b],range(0,len(a),b))
-            res = list(func(lst, step))
-            return res
+            return HTML_TAG_PATTERN.sub('', text)
 
         def is_valid_format(s):
-            pattern = r'^\d+\s+\(\d+\.\d+\)$'
-            if re.match(pattern, s):
-                return True
-            else:
-                return False
+            return bool(_VALID_FORMAT_PATTERN.match(s))
+        
+        _lst_split = lambda lst, step: [lst[i:i+step] for i in range(0, len(lst), step)]
         
         table = html.find_all('table')
 
@@ -153,40 +162,45 @@ class MoeCrawler(Crawler):
             tb_dict[key] = [item for item in tb_dict[key] if "\n" not in item and not is_valid_format(item)]
         
         for key in tb_dict:
-            tb_dict[key] = lst_split(tb_dict[key],3)
+            tb_dict[key] = _lst_split(tb_dict[key],3)
         
         for key in tb_dict:
             for lst in tb_dict[key]:
                 tb_dict[key][tb_dict[key].index(lst)] = [lst[0],lst[2]]
         
-        bpm_dict = {}
-        for key in tb_dict:
-            for lst in tb_dict[key]:
-                bpm_dict[lst[0]] = lst[1]
+        bpm_dict = {
+            lst[0]: lst[1]
+            for key in tb_dict
+            for lst in tb_dict[key]
+        }
         
         return bpm_dict
     
-    def run(self, song:str) -> str:
+    def run(self, song:str) -> tuple[str,float]:
+        start_time = time.time()
         resp = self._fetch(Config.START_URL_MOE)
         data = self._parse_html(resp)
         bpm_dict = self._get_n_parse_song_data(data)
         bpm = bpm_dict[song]
+        duration = time.time() - start_time
         
-        return bpm
+        return bpm, duration
 
 class PhiCrawler:
-    def run(self, song:str) -> dict:
+    def run(self, song:str) -> tuple[dict,float]:
         info_crawler = WikiCrawler()
         bpm_crawler = MoeCrawler()
         
-        info = info_crawler.run(song)
-        info['bpm'] = bpm_crawler.run(song)
+        info, time_wiki = info_crawler.run(song)
+        info['bpm'], time_moe = bpm_crawler.run(song)
         
-        return info
+        duration = time_wiki + time_moe
+        
+        print(f"{duration:.4f} seconds")
+        
+        return info, duration
 
 
 if __name__ == "__main__":
-    crawler = PhiCrawler()
-    info = crawler.run('Spasmodic')
-    print(info)
+    repeat(stmt=lambda: PhiCrawler().run('Spasmodic'), number=1, repeat=5)
     
