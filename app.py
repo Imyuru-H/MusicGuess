@@ -8,7 +8,7 @@ import __init__
 
 Author:      Imyuru_ (Imyuru_H)
 Version:     0.0.2
-Update Time: 25/04/30
+Update Time: 25/05/18
 """
 
 """Update Log:
