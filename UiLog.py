@@ -50,7 +50,7 @@ if os.name == 'nt':  # Windows
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("myappid")
 else:  # macOS & Linux
-    ...
+    pass
 
 CONFIG = {
     'app_name' : 'LoggerApp',

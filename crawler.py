@@ -4,8 +4,8 @@
 """ A crawler for Rhythm Game Music guessing game.
 
 Author:      Imyuru_ (Imyuru_H)
-Version:     0.0.3
-Update Time: 25/05/09
+Version:     0.0.4
+Update Time: 25/05/18
 """
 
 """ Update Logs:
@@ -16,14 +16,17 @@ Update Time: 25/05/09
      - Add a crawler to get the BPM property of the target music.
  - 0.0.3:
      - Fix some bugs while crawling the property which all the charts were wrote by one person.
+ - 0.0.4:
+     - Add lru_cache to optimize the crawling method.
 """
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 __author__ = 'Imyuru_'
 
 # Copyright (c) 2025 Imyuru_. Licensed under MIT License.
 
 import os, re, time
+from functools import lru_cache
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
 import requests
@@ -51,6 +54,7 @@ class Crawler:
         self.session.headers.update(Config.HEADERS)
         self.visited_urls = set()
     
+    @lru_cache(maxsize=None)
     def _fetch(self, url:str, **kwargs) -> requests.Response:
         for attempt in range(Config.MAX_RETRY):
             try:
@@ -196,11 +200,13 @@ class PhiCrawler:
         
         duration = time_wiki + time_moe
         
-        print(f"{duration:.4f} seconds")
+        # print(f"{duration:.4f} seconds")
         
         return info, duration
 
 
 if __name__ == "__main__":
-    repeat(stmt=lambda: PhiCrawler().run('Spasmodic'), number=1, repeat=5)
+    # repeat(stmt=lambda: PhiCrawler().run('Spasmodic'), number=1, repeat=5)
+    info, duration = PhiCrawler().run('Spasmodic')
+    print(info)
     

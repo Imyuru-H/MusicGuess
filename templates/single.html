@@ -7,9 +7,10 @@
 <body>
 	<div id="top-bar"></div>
 	<div id="search-bar">
-		<div>
-			<input type="text" placeholder="请输入想猜的曲目喵~">
-		</div>
+		<span id="form">
+			<input type="text" placeholder="请输入想猜的曲目喵~" id="input">
+			<button type="button" onclick="submit()">提交</button>
+		</span>
 	</div>
 	<div id="game-info"></div>
     <div id="tip">
@@ -18,12 +19,16 @@
 	<div id="table-container">
 		<table id="guess-table">
 			<tr id="header">
-				<th>曲名</th>
-				<th>作者</th>
-				<th>BPM</th>
-				<th>章节</th>
+				<th id="title">曲名</th>
+				<th id="author">作者</th>
+				<th id="bpm">BPM</th>
+				<th id="has-at">具有AT难度</th>
+				<th id="difficulty">定数</th>
+				<th id="max-note-count">最高难度物量</th>
+				<th id="chapter">章节</th>
 			</tr>
 		</table>
 	</div>
+	<script src="{{ url_for('static', filename='js/FormSubmit.js') }}"></script>
 </body>
 </html>

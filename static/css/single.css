@@ -8,9 +8,15 @@ html {
     margin-bottom: 24px;
 }
 
+#search-bar > form {
+	display: inline-flex;
+	align-self: center;
+}
+
 input {
     width: 425px;
     padding: 8px 16px;
+	margin-right: 4px;
     font-size: 12px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -23,6 +29,20 @@ input {
 input:focus {
     outline: none;
     box-shadow: 0 0 0 2px #646cff1a;
+}
+
+button {
+	height: 32px;
+	padding: 8px 16px;
+	border: none;
+	border-radius: 4px;
+	background: #1e293b;
+	color: #fff;
+	transition: background 0.2s;
+}
+
+button:hover {
+	background: #357abd;
 }
 
 /* Guess table styles */
@@ -59,8 +79,40 @@ table {
     border-radius: 20px 0px 0px 0px;
 }
 
+#header th:not(:nth-last-child(1)) {
+	border-right: solid 1px #a0a0a0a0
+}
+
 #header th:nth-last-child(1) {
     border-radius: 0px 20px 0px 0px;
+}
+
+#title {
+	width: 15%;
+}
+
+#author {
+	width: 15%;
+}
+
+#bpm {
+	width: 10%;
+}
+
+#has-at {
+	width: 10%;
+}
+
+#max-note-count {
+	width: 10%;
+}
+
+#difficulty {
+	width: 20%;
+}
+
+#chapter {
+	width: 20%;
 }
 
 #guess-table tr:not(#header) {
