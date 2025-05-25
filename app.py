@@ -7,8 +7,8 @@ import __init__
 """A simple app for Rhythm Game Music guessing game.
 
 Author:      Imyuru_ (Imyuru_H)
-Version:     0.0.2
-Update Time: 25/05/18
+Version:     0.0.3
+Update Time: 25/05/25
 """
 
 """Update Log:
@@ -16,9 +16,12 @@ Update Time: 25/05/18
  - Construct basic functions.
 0.0.2:
  - Realize song info crawl and display.
+0.0.3:
+ - Fix bugs for some possible situation.
+ - Realize nick name identify.
 """
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __author__ = 'Imyuru_'
 
 # Copyright (c) 2025 Imyuru_. Licensed under MIT License.
@@ -27,8 +30,9 @@ import os, sys, time, random
 os.environ["PYTHONIOENCODING"] = "utf-8"
 start_time = time.time()
 
-import numpy as np
+# import numpy as np
 from flask import *
+import pandas as pd
 import logging
 import queue
 import threading
@@ -41,6 +45,7 @@ import crawler
 # config app settings
 CONFIGS = {
     'ui_logging' : True,
+    'show_log' : True,
     'flask_debug' : False,
     'flask_port' : 1145,
     'app_name' : 'Firefly',
@@ -50,17 +55,36 @@ CONFIGS = {
 # init log
 app_qt = QApplication([])
 if CONFIGS['ui_logging']:
-    logs = UiLog.LoggerApp()
+    logs = UiLog.LoggerApp(show_ui=CONFIGS['show_log'])
 else:
     logs = NonUiLog.Info()
+logs.info("Logger app init done.")
     
 # init crawler
 phi_crawler = crawler.PhiCrawler()
+logs.info("Crawler init done.")
+
+# init quest bank
+def init_quest() -> tuple[list[str], dict[str, list[str]]]:
+    quest_bank:pd.DataFrame = pd.read_excel('static\\quest_bank\\quest_phigros.xlsx',
+                                            sheet_name='quest_phigros')
+    
+    titles:list[str] = [str(nick) for nick in quest_bank['name'].values]
+    
+    nicks:list[list[str]] = [([] if nick == 'nan' else nick.split(';')) for nick in [str(nick) for nick in quest_bank['nick name'].values]]
+    
+    nick_dict:dict = {titles[i]:[titles[i].lower()] + [nick.lower() for nick in nicks[i]] for i in range(len(titles))}
+    
+    return titles, nick_dict
+
+title_lst, nick_dict = init_quest()
+logs.info("Quest bank init done.")
 
 # init flask app
 app = Flask(CONFIGS['app_name'])
 app.config['TEMPLATES_AUTO_RELOAD'] = CONFIGS['templates_reload']
 app.static_folder = "static"
+logs.info("Flask app init done.")
 
 # Config Flask logging handlers
 app.logger.handlers = []
@@ -71,6 +95,7 @@ werkzeug_logger.propagate = False  # Deny log propagete
 werkzeug_logger.setLevel(logging.CRITICAL)  # Set log level
 
 log_queue = queue.Queue(-1) # Unlimited queue
+logs.info("Flask logging handlers init done.")
 
 # Process logs
 @app.after_request
@@ -112,27 +137,69 @@ def index():
 def single():
     return render_template("single.html")
 
+@app.route('/start', methods=['POST'])
+def start():
+    global title_lst
+    
+    return jsonify({'operation': 'game start', 'status': True, 'quest': 'start'})
+
 @app.route('/submit', methods=['POST'])
 def parse_data():
+    def _find_all_keys(d:dict[str, list[str]], target:str) -> list[str]:
+        return [key for key, lst in d.items() if target in lst]
+
+    global nick_dict
+    
     if not request.is_json:  # Check if Content-Type is application/json
         return jsonify({"error": "Unsupported Media Type: 需要 JSON 数据"}), 415
     
     data = request.get_json()
     if not data:
         logs.info(f"User Input: No input")
-        return jsonify({'status': False}), 400
+        return jsonify({'operation': 'input submit', 'status': False}), 400
     
-    title = data.get('title')
+    title:str = data.get('title')
     if title == "":
         logs.info("User Input: None")
-        return jsonify({'status': False})
+        return jsonify({'operation': 'input submit', 'status': False})
     
     logs.info(f"User Input: {title}")
-    data, duration = phi_crawler.run(title)
+    title:list[str] = _find_all_keys(nick_dict, title.lower())
+    logs.info(f" -> {title}")
+    
+    if len(title) == 1:
+        try:
+            data, duration = phi_crawler.run(title[0])
+            data = [data]
+        except AttributeError as e:
+            print(e)
+            return jsonify({'operation': 'input submit', 'error':'没有这个别名哦喵~', 'status': False})
+    else:
+        return jsonify({'operation': 'input submit', 'status': True, 'title': title})
+    
     logs.info("Crawler:",
-              f" - Song data: {data}",
+              *[f" - Song data {data.index(d)}: {d}" for d in data],
               f" - Time cost: {duration:.2f} Seconds")
-    return jsonify(dict({'status': True, 'title': title}, **data))
+    
+    html = [f"""
+<tr id="column">
+    <td>{title[i]}</td>
+    <td>{data[i]['artist']}</td>
+    <td>{data[i]['bpm']}</td>
+    <td>{"✅" if len(data[i]['level']) == 4 else "❌"}</td>
+    <td>
+        <span>{data[i]['level'][0]}</span>
+        <span>{data[i]['level'][1]}</span>
+        <span>{data[i]['level'][2]}</span>
+        {f"<span>{data[i]['level'][3]}</span>" if len(data[i]['level']) == 4 else ''}
+    </td>
+    <td>{data[i]['note count'][-1]}</td>
+    <td>{data[i]['pack']}</td>
+</tr>""" for i in range(len(data))]
+
+    logs.info(*html)
+    
+    return jsonify({'operation': 'input submit', 'status': True, 'html': html, 'title': title})
 
 
 if __name__ == "__main__":
@@ -163,5 +230,6 @@ if __name__ == "__main__":
     crawler_init_thread.start()
     
     # Show Logging window and start Qt event loop
-    logs.show()
-    sys.exit(app_qt.exec_())
+    if CONFIGS['ui_logging']:
+        logs.show()
+        sys.exit(app_qt.exec_())

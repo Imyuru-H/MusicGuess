@@ -99,10 +99,13 @@ class LogConsumer(QThread):
 
 
 class LoggerApp(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, show_ui=True):
         super().__init__(parent)
+        self.show_ui = show_ui
         self._init_ui()
         self._init_worker()
+        if not show_ui:
+            self.hide()
         self.info("System Info:", *self.get_sys_info())
     
     def _init_ui(self):

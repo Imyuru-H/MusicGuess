@@ -4,8 +4,8 @@
 """ A crawler for Rhythm Game Music guessing game.
 
 Author:      Imyuru_ (Imyuru_H)
-Version:     0.0.4
-Update Time: 25/05/18
+Version:     0.0.5
+Update Time: 25/05/25
 """
 
 """ Update Logs:
@@ -18,9 +18,11 @@ Update Time: 25/05/18
      - Fix some bugs while crawling the property which all the charts were wrote by one person.
  - 0.0.4:
      - Add lru_cache to optimize the crawling method.
+ - 0.0.5:
+     - Fix bugs.
 """
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 __author__ = 'Imyuru_'
 
 # Copyright (c) 2025 Imyuru_. Licensed under MIT License.
@@ -81,40 +83,125 @@ class WikiCrawler(Crawler):
     
     def _get_song_data(self, html:BeautifulSoup) -> str:
         table = html.find('table')
-        table = table.get_text('')
+        table = table.get_text(',')
         return table
     
     def _parse_table_lst(self, table:str) -> dict:
-        def _get_chart_design(table:list):
-            if 'Chart design (EZ)' in table:
-                result = list(filter(None, 
-                            [tb_lst[tb_lst.index('Chart design (EZ)') + 1],
-                             tb_lst[tb_lst.index('Chart design (HD)') + 1],
-                             tb_lst[tb_lst.index('Chart design (IN)') + 1],
-                             tb_lst[tb_lst.index('Chart design (AT)') + 1] if if_at else '']))
-            else:
-                result = tb_lst[tb_lst.index('Chart design') + 1]
+        def _get_chart_design(table: list, if_at: bool = False) -> list:
+            """
+            从表格数据中提取图表设计信息
             
-            return result
+            Args:
+                table: 包含图表设计信息的列表
+                if_at: 是否包含AT难度信息
+                
+            Returns:
+                提取后的图表设计信息列表
+            """
+            result = []
+            
+            # 定义所有可能的键名变体
+            KEY_VARIANTS = {
+                'ez': ['Chart design (EZ)'],
+                'ez_hd': ['Chart design (EZ/HD)'],
+                'ez_in': ['Chart design (EZ/IN)'],
+                'ez_at': ['Chart design (EZ/AT)'],
+                'hd_in': ['Chart design (HD/IN)'],
+                'hd_at': ['Chart design (HD/AT)'],
+                'in_at': ['Chart design (IN/AT)'],
+                'hd': ['Chart design (HD)'],
+                'in': ['Chart design (IN)'],
+                'at': ['Chart design (AT)'],
+                'default': ['Chart design']
+            }
+            
+            def find_key(keys):
+                """在表格中查找第一个匹配的键"""
+                for key in keys:
+                    if key in table:
+                        return key
+                return None
+            
+            # 查找存在的键
+            found_keys = {k: find_key(v) for k, v in KEY_VARIANTS.items()}
+            
+            # 确定结果组合
+            if found_keys['ez_hd']:
+                result = [
+                    table[table.index(found_keys['ez_hd']) + 1],
+                    table[table.index(found_keys['ez_hd']) + 1],
+                    table[table.index(found_keys['in']) + 1] if found_keys['in'] else None,
+                    table[table.index(found_keys['at']) + 1] if if_at and found_keys['at'] else None
+                ]
+            elif found_keys['ez_in']:
+                result = [
+                    table[table.index(found_keys['ez_in']) + 1],
+                    table[table.index(found_keys['hd']) + 1] if found_keys['hd'] else None,
+                    table[table.index(found_keys['ez_in']) + 1],
+                    table[table.index(found_keys['at']) + 1] if if_at and found_keys['at'] else None
+                ]
+            elif found_keys['ez_at']:
+                result = [
+                    table[table.index(found_keys['ez_in']) + 1] if found_keys['ez_in'] else None,
+                    table[table.index(found_keys['hd']) + 1] if found_keys['hd'] else None,
+                    table[table.index(found_keys['in']) + 1] if found_keys['in'] else None,
+                    table[table.index(found_keys['ez_at']) + 1]
+                ]
+            elif found_keys['hd_in']:
+                result = [
+                    table[table.index(found_keys['ez']) + 1] if found_keys['ez'] else None,
+                    table[table.index(found_keys['hd_in']) + 1],
+                    table[table.index(found_keys['hd_in']) + 1],
+                    table[table.index(found_keys['at']) + 1] if if_at and found_keys['at'] else None
+                ]
+            elif found_keys['hd_at']:
+                result = [
+                    table[table.index(found_keys['ez']) + 1] if found_keys['ez'] else None,
+                    table[table.index(found_keys['hd_at']) + 1],
+                    table[table.index(found_keys['in']) + 1] if found_keys['in'] else None,
+                    table[table.index(found_keys['hd_at']) + 1]
+                ]
+            elif found_keys['in_at']:
+                result = [
+                    table[table.index(found_keys['ez']) + 1] if found_keys['ez'] else None,
+                    table[table.index(found_keys['hd']) + 1] if found_keys['hd'] else None,
+                    table[table.index(found_keys['in_at']) + 1],
+                    table[table.index(found_keys['in_at']) + 1]
+                ]
+            elif found_keys['ez']:
+                # 默认情况
+                result = table[table.index(found_keys['default']) + 1] if found_keys['default'] else None
+            
+            # 过滤掉None值
+            return list(filter(None, result)) if isinstance(result, list) else result
 
         tb_lst = table.split('\n')
+        tb_lst = [item for sublist in [i.split(',') for i in tb_lst] for item in sublist]
         # del all umpty elements in the list
         tb_lst = list(filter(None, tb_lst))
-
-        # print(tb_lst)
 
         # if have AT difficulty then True, if not then False
         if_at = True if tb_lst.index('Difficulty') + 1 - tb_lst.index('Level') == 4 else False
         
+        difficulty = tb_lst[tb_lst.index('Difficulty') + 1 : tb_lst.index('Level')]
+        level = tb_lst[tb_lst.index('Level') + 1 : tb_lst.index('Note count')]
+        note_count = tb_lst[tb_lst.index('Note count') + 1 : tb_lst.index('Artist')]
+        
+        if 'Legacy' in difficulty:
+            index = difficulty.index('Legacy')
+            difficulty.pop(index)
+            level.pop(index)
+            note_count.pop(index)
+        
         info_dict = {
             'pack' : tb_lst[tb_lst.index('Pack') + 1],
-            'difficulty' : tb_lst[tb_lst.index('Difficulty') + 1 : tb_lst.index('Level')],
-            'level' : tb_lst[tb_lst.index('Level') + 1 : tb_lst.index('Note count')],
-            'note count' : tb_lst[tb_lst.index('Note count') + 1 : tb_lst.index('Artist')],
+            'difficulty' : difficulty,
+            'level' : level,
+            'note count' : note_count,
             'artist' : tb_lst[tb_lst.index('Artist') + 1],
             'illustration' : tb_lst[tb_lst.index('Illustration') + 1],
             'duration' : tb_lst[tb_lst.index('Duration') + 1],
-            'chart design' : _get_chart_design(tb_lst),
+            'chart design' : _get_chart_design(tb_lst, if_at),
         }
         
         return info_dict
@@ -153,6 +240,7 @@ class MoeCrawler(Crawler):
             'side story' : table[2].find_all('td'),
             'ex chapter' : table[3].find_all('td'),
             'ex story' : table[4].find_all('td'),
+            'single' : table[5].find_all('td')
         }
         
         tmp = []
@@ -166,11 +254,17 @@ class MoeCrawler(Crawler):
             tb_dict[key] = [item for item in tb_dict[key] if "\n" not in item and not is_valid_format(item)]
         
         for key in tb_dict:
-            tb_dict[key] = _lst_split(tb_dict[key],3)
+            if key != 'single':
+                tb_dict[key] = _lst_split(tb_dict[key],3)
+            else:
+                tb_dict[key] = _lst_split(tb_dict[key],4)
         
         for key in tb_dict:
             for lst in tb_dict[key]:
-                tb_dict[key][tb_dict[key].index(lst)] = [lst[0],lst[2]]
+                if key != 'single':
+                    tb_dict[key][tb_dict[key].index(lst)] = [lst[0],lst[2]]
+                else:
+                    tb_dict[key][tb_dict[key].index(lst)] = [lst[1],lst[3]]
         
         bpm_dict = {
             lst[0]: lst[1]
@@ -185,7 +279,7 @@ class MoeCrawler(Crawler):
         resp = self._fetch(Config.START_URL_MOE)
         data = self._parse_html(resp)
         bpm_dict = self._get_n_parse_song_data(data)
-        bpm = bpm_dict[song]
+        bpm = "175" if song == "Another Me (Neutral Moon)" else "210" if song == "Another Me (D_AAN)" else bpm_dict[song]
         duration = time.time() - start_time
         
         return bpm, duration
@@ -200,13 +294,10 @@ class PhiCrawler:
         
         duration = time_wiki + time_moe
         
-        # print(f"{duration:.4f} seconds")
-        
         return info, duration
 
 
 if __name__ == "__main__":
-    # repeat(stmt=lambda: PhiCrawler().run('Spasmodic'), number=1, repeat=5)
-    info, duration = PhiCrawler().run('Spasmodic')
+    info, duration = PhiCrawler().run('Another Me (Neutral Moon)')
     print(info)
     
